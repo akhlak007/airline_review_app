@@ -22,7 +22,7 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
   final _formKey = GlobalKey<FormState>();
   final _reviewController = TextEditingController();
   final _imagePicker = ImagePicker();
-  
+
   File? _selectedImage;
   Airport? _selectedDepartureAirport;
   Airport? _selectedArrivalAirport;
@@ -30,8 +30,21 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
   String _selectedClass = 'Economy';
   DateTime? _selectedDate;
   double _rating = 0.0;
-  
+
   final List<String> _flightClasses = ['Economy', 'Business', 'First'];
+
+  // Store loaded airports and airlines for dropdowns
+  List<Airport> _airports = [];
+  List<Airline> _airlines = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Load initial airports and airlines
+    final bloc = context.read<ShareReviewBloc>();
+    bloc.add(const LoadAirportsEvent(search: ''));
+    bloc.add(const LoadAirlinesEvent(search: ''));
+  }
 
   @override
   void dispose() {
@@ -46,7 +59,7 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
       maxHeight: 1080,
       imageQuality: 85,
     );
-    
+
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
@@ -61,7 +74,7 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
-    
+
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
@@ -81,7 +94,7 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
         'review': _reviewController.text,
         'image': _selectedImage?.path,
       };
-      
+
       context.read<ShareReviewBloc>().add(SubmitReviewEvent(reviewData));
     }
   }
@@ -117,6 +130,14 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                 backgroundColor: Colors.red,
               ),
             );
+          } else if (state is AirportsLoaded) {
+            setState(() {
+              _airports = state.airports;
+            });
+          } else if (state is AirlinesLoaded) {
+            setState(() {
+              _airlines = state.airlines;
+            });
           }
         },
         child: SingleChildScrollView(
@@ -180,14 +201,14 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                           ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Departure Airport
                 DropdownSearchField<Airport>(
                   labelText: 'Departure Airport',
                   value: _selectedDepartureAirport,
-                  displayText: (airport) => 
+                  displayText: (airport) =>
                       '${airport.iataCode} - ${airport.airportName}',
                   onChanged: (airport) {
                     setState(() {
@@ -196,8 +217,8 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                   },
                   onSearch: (query) {
                     context.read<ShareReviewBloc>().add(
-                      LoadAirportsEvent(search: query),
-                    );
+                          LoadAirportsEvent(search: query),
+                        );
                   },
                   itemBuilder: (airport) => Padding(
                     padding: const EdgeInsets.symmetric(
@@ -228,15 +249,16 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                     }
                     return null;
                   },
+                  items: _airports,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Arrival Airport
                 DropdownSearchField<Airport>(
                   labelText: 'Arrival Airport',
                   value: _selectedArrivalAirport,
-                  displayText: (airport) => 
+                  displayText: (airport) =>
                       '${airport.iataCode} - ${airport.airportName}',
                   onChanged: (airport) {
                     setState(() {
@@ -245,8 +267,8 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                   },
                   onSearch: (query) {
                     context.read<ShareReviewBloc>().add(
-                      LoadAirportsEvent(search: query),
-                    );
+                          LoadAirportsEvent(search: query),
+                        );
                   },
                   itemBuilder: (airport) => Padding(
                     padding: const EdgeInsets.symmetric(
@@ -277,15 +299,16 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                     }
                     return null;
                   },
+                  items: _airports,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Airline
                 DropdownSearchField<Airline>(
                   labelText: 'Airline',
                   value: _selectedAirline,
-                  displayText: (airline) => 
+                  displayText: (airline) =>
                       '${airline.iataCode} - ${airline.airlineName}',
                   onChanged: (airline) {
                     setState(() {
@@ -294,8 +317,8 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                   },
                   onSearch: (query) {
                     context.read<ShareReviewBloc>().add(
-                      LoadAirlinesEvent(search: query),
-                    );
+                          LoadAirlinesEvent(search: query),
+                        );
                   },
                   itemBuilder: (airline) => Padding(
                     padding: const EdgeInsets.symmetric(
@@ -326,10 +349,11 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                     }
                     return null;
                   },
+                  items: _airlines,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Class Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedClass,
@@ -350,9 +374,9 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                     }
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Review Text
                 TextFormField(
                   controller: _reviewController,
@@ -371,9 +395,9 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Travel Date and Rating Row
                 Row(
                   children: [
@@ -439,14 +463,14 @@ class _ShareReviewPageState extends State<ShareReviewPage> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Submit Button
                 BlocBuilder<ShareReviewBloc, ShareReviewState>(
                   builder: (context, state) {
                     final isLoading = state is ShareReviewLoading;
-                    
+
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(

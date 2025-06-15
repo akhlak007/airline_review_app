@@ -13,6 +13,7 @@ class DropdownSearchField<T> extends StatefulWidget {
   final void Function(String) onSearch;
   final Widget Function(T) itemBuilder;
   final String? Function(T?)? validator;
+  final List<T>? items;
 
   const DropdownSearchField({
     super.key,
@@ -23,6 +24,7 @@ class DropdownSearchField<T> extends StatefulWidget {
     required this.onSearch,
     required this.itemBuilder,
     this.validator,
+    this.items,
   });
 
   @override
@@ -34,7 +36,6 @@ class _DropdownSearchFieldState<T> extends State<DropdownSearchField<T>> {
   final FocusNode _focusNode = FocusNode();
   OverlayEntry? _overlayEntry;
   final LayerLink _layerLink = LayerLink();
-  List<T> _items = [];
   bool _isOpen = false;
 
   @override
@@ -44,6 +45,24 @@ class _DropdownSearchFieldState<T> extends State<DropdownSearchField<T>> {
       _controller.text = widget.displayText(widget.value!);
     }
     _focusNode.addListener(_onFocusChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant DropdownSearchField<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Always update text to match value
+    if (widget.value != oldWidget.value) {
+      if (widget.value != null) {
+        _controller.text = widget.displayText(widget.value!);
+      } else {
+        _controller.clear();
+      }
+    }
+    // If items changed and overlay is open, rebuild overlay
+    if (_isOpen && widget.items != oldWidget.items) {
+      _removeOverlay();
+      _showOverlay();
+    }
   }
 
   @override
@@ -64,7 +83,6 @@ class _DropdownSearchFieldState<T> extends State<DropdownSearchField<T>> {
 
   void _showOverlay() {
     if (_overlayEntry != null) return;
-    
     _overlayEntry = _createOverlayEntry();
     Overlay.of(context).insert(_overlayEntry!);
     setState(() {
@@ -83,7 +101,7 @@ class _DropdownSearchFieldState<T> extends State<DropdownSearchField<T>> {
   OverlayEntry _createOverlayEntry() {
     RenderBox renderBox = context.findRenderObject() as RenderBox;
     var size = renderBox.size;
-
+    final items = widget.items ?? [];
     return OverlayEntry(
       builder: (context) => Positioned(
         width: size.width,
@@ -101,56 +119,29 @@ class _DropdownSearchFieldState<T> extends State<DropdownSearchField<T>> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey[300]!),
               ),
-              child: BlocConsumer<ShareReviewBloc, ShareReviewState>(
-                listener: (context, state) {
-                  if (state is AirlinesLoaded && T == Airline) {
-                    setState(() {
-                      _items = state.airlines as List<T>;
-                    });
-                  } else if (state is AirportsLoaded && T == Airport) {
-                    setState(() {
-                      _items = state.airports as List<T>;
-                    });
-                  }
-                },
-                builder: (context, state) {
-                  if (state is ShareReviewLoading) {
-                    return const SizedBox(
-                      height: 100,
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
-
-                  if (_items.isEmpty) {
-                    return const SizedBox(
+              child: items.isEmpty
+                  ? const SizedBox(
                       height: 100,
                       child: Center(
                         child: Text('No items found'),
                       ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: _items.length,
-                    itemBuilder: (context, index) {
-                      final item = _items[index];
-                      return InkWell(
-                        onTap: () {
-                          widget.onChanged(item);
-                          _controller.text = widget.displayText(item);
-                          _focusNode.unfocus();
-                          _removeOverlay();
-                        },
-                        child: widget.itemBuilder(item),
-                      );
-                    },
-                  );
-                },
-              ),
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        return InkWell(
+                          onTap: () {
+                            widget.onChanged(item);
+                            _controller.text = widget.displayText(item);
+                            _removeOverlay();
+                          },
+                          child: widget.itemBuilder(item),
+                        );
+                      },
+                    ),
             ),
           ),
         ),
@@ -174,7 +165,7 @@ class _DropdownSearchFieldState<T> extends State<DropdownSearchField<T>> {
         onChanged: (value) {
           widget.onSearch(value);
         },
-        validator: widget.validator != null 
+        validator: widget.validator != null
             ? (value) => widget.validator!(widget.value)
             : null,
       ),
