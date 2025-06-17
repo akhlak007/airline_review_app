@@ -1,41 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'core/di/injection_container.dart' as di;
-import 'core/theme/app_theme.dart';
-import 'core/routes/app_routes.dart';
-import 'features/review_feed/presentation/bloc/review_feed_bloc.dart';
-import 'features/review_feed/presentation/bloc/review_feed_event.dart';
-import 'features/share_review/presentation/bloc/share_review_bloc.dart';
-import 'features/review_feed/presentation/pages/review_feed_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart'; // 👈 import the generated options
+import 'features/auth/presentation/auth_viewmodel.dart';
+import 'features/auth/presentation/login_screen.dart';
+import 'features/review_feed/presentation/review_feed_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await di.init();
-  runApp(const MyApp());
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform, // 👈 use this
+  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (_) => di.sl<ReviewFeedBloc>()..add(LoadReviewsEvent()),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      title: 'Flutter Review App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
         ),
-        BlocProvider(
-          create: (_) => di.sl<ShareReviewBloc>(),
-        ),
-      ],
-      child: MaterialApp(
-        title: 'Airline Review',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        home: const ReviewFeedPage(),
-        onGenerateRoute: AppRoutes.generateRoute,
-        debugShowCheckedModeBanner: false,
+      ),
+      home: Consumer(
+        builder: (context, ref, child) {
+          final authAsync = ref.watch(authStateProvider);
+          return authAsync.when(
+            data: (user) =>
+            user != null ? const ReviewFeedScreen() : const LoginScreen(),
+            loading: () => const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, _) => const LoginScreen(),
+          );
+        },
       ),
     );
   }
