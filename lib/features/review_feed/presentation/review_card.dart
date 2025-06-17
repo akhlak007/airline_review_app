@@ -130,25 +130,36 @@ class _ReviewCardState extends ConsumerState<ReviewCard> {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          ...pillTags.map((tag) => Container(
-                                margin:
-                                    const EdgeInsets.only(right: 6, bottom: 4),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  tag,
-                                  style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                              )),
-                        ],
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 0),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: pillTags
+                              .map((tag) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      tag,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
                       ),
                     ],
                   ),
@@ -193,7 +204,7 @@ class _ReviewCardState extends ConsumerState<ReviewCard> {
                   onPressed: _toggleLike,
                 ),
                 const SizedBox(width: 4),
-                Text('${review.likes} Like'),
+                Text('${review.likesCount} Like'),
                 const SizedBox(width: 16),
                 IconButton(
                   icon: const Icon(Icons.comment_outlined),
@@ -201,7 +212,7 @@ class _ReviewCardState extends ConsumerState<ReviewCard> {
                       setState(() => _showComments = !_showComments),
                 ),
                 const SizedBox(width: 4),
-                Text('${review.comments.length} Comment'),
+                Text('${review.commentsCount} Comment'),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.share_outlined),
@@ -214,7 +225,18 @@ class _ReviewCardState extends ConsumerState<ReviewCard> {
             // Comments Section
             if (_showComments) ...[
               const Divider(),
-              ...review.comments.map((c) => _CommentTile(comment: c)),
+              StreamBuilder<List<ReviewComment>>(
+                stream:
+                    ref.read(reviewRepositoryProvider).getComments(review.id!),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const SizedBox.shrink();
+                  final comments = snapshot.data!;
+                  return Column(
+                    children:
+                        comments.map((c) => _CommentTile(comment: c)).toList(),
+                  );
+                },
+              ),
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(

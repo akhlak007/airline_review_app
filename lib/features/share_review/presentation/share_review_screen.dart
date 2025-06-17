@@ -9,6 +9,7 @@ import '../../../core/widgets/rating_stars.dart';
 import '../../../core/widgets/media_preview.dart';
 import '../../../core/constants/class_options.dart';
 import '../../../core/widgets/airline_dropdown.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 
 class ShareReviewScreen extends ConsumerStatefulWidget {
   const ShareReviewScreen({super.key});
@@ -75,11 +76,11 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
   }
 
   Future<void> _selectDate() async {
-    final date = await showDatePicker(
+    final date = await showMonthYearPicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: DateTime(DateTime.now().year + 5),
     );
     if (date != null) {
       ref.read(shareReviewViewModelProvider.notifier).updateTravelDate(date);
@@ -278,7 +279,7 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
                           const SizedBox(width: 8),
                           Text(
                             state.travelDate != null
-                                ? '${state.travelDate!.day}/${state.travelDate!.month}/${state.travelDate!.year}'
+                                ? '${_monthYearString(state.travelDate!)}'
                                 : 'Travel Date',
                             style: TextStyle(
                               color: state.travelDate != null
@@ -357,5 +358,23 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
         ),
       ),
     );
+  }
+
+  String _monthYearString(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.year}';
   }
 }
