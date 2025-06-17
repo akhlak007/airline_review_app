@@ -8,6 +8,7 @@ import '../../../core/widgets/airport_dropdown.dart';
 import '../../../core/widgets/rating_stars.dart';
 import '../../../core/widgets/media_preview.dart';
 import '../../../core/constants/class_options.dart';
+import '../../../core/widgets/airline_dropdown.dart';
 
 class ShareReviewScreen extends ConsumerStatefulWidget {
   const ShareReviewScreen({super.key});
@@ -43,8 +44,11 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
                 final ImagePicker picker = ImagePicker();
                 final List<XFile> images = await picker.pickMultiImage();
                 if (images.isNotEmpty) {
-                  final files = images.map((image) => File(image.path)).toList();
-                  ref.read(shareReviewViewModelProvider.notifier).addFiles(files);
+                  final files =
+                      images.map((image) => File(image.path)).toList();
+                  ref
+                      .read(shareReviewViewModelProvider.notifier)
+                      .addFiles(files);
                 }
               },
             ),
@@ -58,7 +62,9 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
                 );
                 if (result != null && result.files.single.path != null) {
                   final file = File(result.files.single.path!);
-                  ref.read(shareReviewViewModelProvider.notifier).addFiles([file]);
+                  ref
+                      .read(shareReviewViewModelProvider.notifier)
+                      .addFiles([file]);
                 }
               },
             ),
@@ -81,7 +87,8 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
   }
 
   void _submit() async {
-    final success = await ref.read(shareReviewViewModelProvider.notifier).submitReview();
+    final success =
+        await ref.read(shareReviewViewModelProvider.notifier).submitReview();
     if (success && mounted) {
       ref.read(shareReviewViewModelProvider.notifier).resetForm();
       Navigator.pop(context);
@@ -118,28 +125,33 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
               child: Container(
                 height: 120,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                  border: Border.all(
+                      color: Colors.grey.shade300, style: BorderStyle.solid),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: state.selectedFiles.isEmpty
                     ? const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.file_upload_outlined, size: 40, color: Colors.grey),
+                          Icon(Icons.file_upload_outlined,
+                              size: 40, color: Colors.grey),
                           SizedBox(height: 8),
-                          Text('Drop Your Image Here Or Browse', style: TextStyle(color: Colors.grey)),
+                          Text('Drop Your Image Here Or Browse',
+                              style: TextStyle(color: Colors.grey)),
                         ],
                       )
                     : SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.all(10),
                         child: Row(
-                          children: state.selectedFiles.asMap().entries.map((entry) {
+                          children:
+                              state.selectedFiles.asMap().entries.map((entry) {
                             final index = entry.key;
                             final file = entry.value;
-                            final isVideo = file.path.toLowerCase().endsWith('.mp4') ||
-                                file.path.toLowerCase().endsWith('.mov');
-                            
+                            final isVideo =
+                                file.path.toLowerCase().endsWith('.mp4') ||
+                                    file.path.toLowerCase().endsWith('.mov');
+
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: MediaPreview(
@@ -178,27 +190,12 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
             const SizedBox(height: 16),
 
             // Airline
-            TextFormField(
-              controller: _airlineController,
-              decoration: InputDecoration(
-                hintText: 'Airline',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.deepPurple),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              onChanged: (value) => ref
+            AirlineDropdown(
+              selectedAirline: state.airline,
+              hintText: 'Airline',
+              onChanged: (airline) => ref
                   .read(shareReviewViewModelProvider.notifier)
-                  .updateAirline(value),
+                  .updateAirline(airline),
             ),
             const SizedBox(height: 16),
 
@@ -219,7 +216,8 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: Colors.deepPurple),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               items: TravelClass.options.map((classType) {
                 return DropdownMenuItem(
@@ -251,7 +249,8 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: Colors.deepPurple),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               onChanged: (value) => ref
                   .read(shareReviewViewModelProvider.notifier)
@@ -266,21 +265,25 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
                   child: GestureDetector(
                     onTap: _selectDate,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today, size: 20, color: Colors.grey),
+                          const Icon(Icons.calendar_today,
+                              size: 20, color: Colors.grey),
                           const SizedBox(width: 8),
                           Text(
                             state.travelDate != null
                                 ? '${state.travelDate!.day}/${state.travelDate!.month}/${state.travelDate!.year}'
                                 : 'Travel Date',
                             style: TextStyle(
-                              color: state.travelDate != null ? Colors.black : Colors.grey,
+                              color: state.travelDate != null
+                                  ? Colors.black
+                                  : Colors.grey,
                             ),
                           ),
                         ],
@@ -292,7 +295,8 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Rating', style: TextStyle(fontWeight: FontWeight.w500)),
+                    const Text('Rating',
+                        style: TextStyle(fontWeight: FontWeight.w500)),
                     const SizedBox(height: 4),
                     RatingStars(
                       rating: state.rating,
@@ -345,7 +349,8 @@ class _ShareReviewScreenState extends ConsumerState<ShareReviewScreen> {
                     )
                   : const Text(
                       'Submit',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
             ),
           ],

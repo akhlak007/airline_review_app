@@ -84,6 +84,14 @@ class _ReviewCardState extends ConsumerState<ReviewCard> {
 
   @override
   Widget build(BuildContext context) {
+    final review = widget.review;
+    final List<String> pillTags = [
+      review.departure,
+      review.arrival,
+      review.airline,
+      review.travelClass,
+      AppDateUtils.formatTravelDate(review.travelDate),
+    ];
     return Card(
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -94,231 +102,248 @@ class _ReviewCardState extends ConsumerState<ReviewCard> {
           children: [
             // Header
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   backgroundColor: Colors.deepPurple,
-                  child: Icon(Icons.person, color: Colors.white),
+                  backgroundImage: null, // TODO: Add user photo if available
+                  child: const Icon(Icons.person, color: Colors.white),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.review.authorName,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      Row(
+                        children: [
+                          Text(
+                            review.authorName,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 16),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            RelativeTime.getRelativeTime(review.createdAt),
+                            style: TextStyle(
+                                color: Colors.grey.shade600, fontSize: 12),
+                          ),
+                        ],
                       ),
-                      Text(
-                        RelativeTime.getRelativeTime(widget.review.createdAt),
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          ...pillTags.map((tag) => Container(
+                                margin:
+                                    const EdgeInsets.only(right: 6, bottom: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  tag,
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                              )),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                RatingStars(rating: widget.review.rating, size: 16),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Flight Info
-            Row(
-              children: [
-                Text(
-                  '${widget.review.departure} → ${widget.review.arrival}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-                const Spacer(),
-                Text(
-                  AppDateUtils.formatTravelDate(widget.review.travelDate),
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  widget.review.airline,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    widget.review.travelClass,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Description
-            Text(
-              widget.review.description,
-              style: const TextStyle(fontSize: 14),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (widget.review.description.length > 100)
-              GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Full Review'),
-                      content: Text(widget.review.description),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Close'),
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 18),
+                        const SizedBox(width: 2),
+                        Text(
+                          review.rating.toStringAsFixed(1),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                       ],
                     ),
-                  );
-                },
-                child: const Text(
-                  'See More',
-                  style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.w500),
+                  ],
                 ),
-              ),
-            const SizedBox(height: 12),
-
-            // Media
-            if (widget.review.mediaUrls.isNotEmpty)
-              MediaGrid(
-                mediaUrls: widget.review.mediaUrls,
-                mediaTypes: widget.review.mediaTypes,
-              ),
-
-            const SizedBox(height: 12),
-
-            // Interaction Stats
-            Row(
-              children: [
-                Text('${widget.review.likesCount} Like'),
-                const SizedBox(width: 16),
-                Text('${widget.review.commentsCount} Comment'),
               ],
             ),
-            const Divider(),
+            const SizedBox(height: 12),
 
-            // Action Buttons
+            // Review Text
+            Text(
+              review.description,
+              style: const TextStyle(fontSize: 15, height: 1.5),
+            ),
+            const SizedBox(height: 12),
+
+            // Media Grid
+            if (review.mediaUrls.isNotEmpty)
+              _ReviewMediaGrid(mediaUrls: review.mediaUrls),
+            const SizedBox(height: 12),
+
+            // Actions Row
             Row(
               children: [
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: _toggleLike,
-                    icon: Icon(
-                      _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                      color: _isLiked ? Colors.deepPurple : Colors.grey,
-                    ),
-                    label: Text(
-                      'Like',
-                      style: TextStyle(
-                        color: _isLiked ? Colors.deepPurple : Colors.grey,
-                      ),
-                    ),
-                  ),
+                IconButton(
+                  icon: Icon(_isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: Colors.red),
+                  onPressed: _toggleLike,
                 ),
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _showComments = !_showComments;
-                      });
-                    },
-                    icon: const Icon(Icons.comment_outlined, color: Colors.grey),
-                    label: const Text('Comment', style: TextStyle(color: Colors.grey)),
-                  ),
+                const SizedBox(width: 4),
+                Text('${review.likes} Like'),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: const Icon(Icons.comment_outlined),
+                  onPressed: () =>
+                      setState(() => _showComments = !_showComments),
                 ),
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: _share,
-                    icon: const Icon(Icons.share_outlined, color: Colors.grey),
-                    label: const Text('Share', style: TextStyle(color: Colors.grey)),
-                  ),
+                const SizedBox(width: 4),
+                Text('${review.comments.length} Comment'),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.share_outlined),
+                  onPressed: _share,
                 ),
+                const Text('Share'),
               ],
             ),
 
             // Comments Section
-            if (_showComments && widget.review.id != null) ...[
+            if (_showComments) ...[
               const Divider(),
-              // Add Comment
-              if (FirebaseAuth.instance.currentUser != null)
-                Row(
+              ...review.comments.map((c) => _CommentTile(comment: c)),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _commentController,
                         decoration: const InputDecoration(
-                          hintText: 'Write a comment...',
-                          border: InputBorder.none,
+                          hintText: 'Add a comment...',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                       ),
                     ),
                     IconButton(
+                      icon: const Icon(Icons.send),
                       onPressed: _addComment,
-                      icon: const Icon(Icons.send, color: Colors.deepPurple),
                     ),
                   ],
                 ),
-              // Comments List
-              StreamBuilder<List<ReviewComment>>(
-                stream: ref.read(reviewRepositoryProvider).getComments(widget.review.id!),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) return const SizedBox.shrink();
-
-                  final comments = snapshot.data!;
-                  return Column(
-                    children: comments.map((comment) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const CircleAvatar(
-                              radius: 12,
-                              backgroundColor: Colors.grey,
-                              child: Icon(Icons.person, size: 12, color: Colors.white),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        comment.userName,
-                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        RelativeTime.getRelativeTime(comment.createdAt),
-                                        style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
-                                      ),
-                                    ],
-                                  ),
-                                  Text(comment.text, style: const TextStyle(fontSize: 12)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
               ),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ReviewMediaGrid extends StatelessWidget {
+  final List<String> mediaUrls;
+  const _ReviewMediaGrid({required this.mediaUrls});
+
+  @override
+  Widget build(BuildContext context) {
+    final showCount = mediaUrls.length > 4 ? 4 : mediaUrls.length;
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+        childAspectRatio: 1,
+      ),
+      itemCount: showCount,
+      itemBuilder: (context, i) {
+        if (i == 3 && mediaUrls.length > 4) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              _ReviewImage(url: mediaUrls[i]),
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: Text(
+                    '+${mediaUrls.length - 3}',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        return _ReviewImage(url: mediaUrls[i]);
+      },
+    );
+  }
+}
+
+class _ReviewImage extends StatelessWidget {
+  final String url;
+  const _ReviewImage({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(url, fit: BoxFit.cover),
+    );
+  }
+}
+
+class _CommentTile extends StatelessWidget {
+  final ReviewComment comment;
+  const _CommentTile({required this.comment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CircleAvatar(
+            radius: 14,
+            backgroundColor: Colors.deepPurple,
+            child: Icon(Icons.person, size: 16, color: Colors.white),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  comment.userName,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+                Text(
+                  RelativeTime.getRelativeTime(comment.createdAt),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                ),
+                const SizedBox(height: 2),
+                Text(comment.text),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
