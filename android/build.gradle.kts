@@ -1,15 +1,17 @@
-buildscript {
-    ext.kotlin_version = '1.9.22'
+// File: android/build.gradle.kts
 
+buildscript {
     repositories {
         google()
         mavenCentral()
     }
-
     dependencies {
-        classpath "com.android.tools.build:gradle:8.2.2"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "com.google.gms:google-services:4.4.1" // for Firebase
+        // Android Gradle plugin
+        classpath("com.android.tools.build:gradle:8.2.2")
+        // Kotlin Gradle plugin
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
+        // Google Services / Firebase
+        classpath("com.google.gms:google-services:4.4.1")
     }
 }
 
@@ -20,13 +22,15 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+// Redirect the build output outside OneDrive
+rootProject.buildDir = file("../build")
 
 subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    project.buildDir = file("${rootProject.buildDir}/${project.name}")
     project.evaluationDependsOn(":app")
 }
 
-tasks.register("clean", Delete) {
-    delete rootProject.buildDir
+// “clean” task
+tasks.register<Delete>("clean") {
+    delete(rootProject.buildDir)
 }
